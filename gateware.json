@@ -1,0 +1,27 @@
+{
+    "name": "exerion",
+    "displayName": "exerion",
+    "description": "Exerion Compatible Gateware IP Core",
+    "author": "antongale",
+    "version": "0.1.0",
+    "license": "GPL-3.0-or-later",
+    "repository": "https://github.com/opengateware/arcade-exerion",
+    "keywords": [
+        "ecosystem:gateman"
+    ],
+    "scripts": {
+        "verilator": "echo \"Error: no simulation specified\" && exit 1",
+        "build:pocket": "quartus_sh --flow compile projects/exerion_pocket.qpf",
+        "program:pocket": "quartus_pgm -m jtag -c 1 -o \"p;projects/output_files/exerion_pocket.sof@1\""
+    },
+    "hardware": {
+        "id": "exerion",
+        "name": "Exerion",
+        "year": 1983,
+        "manufacturer": "Jaleco"
+    },
+    "platforms": {
+        "pocket": "1.2.0"
+    },
+    "modules": {}
+}

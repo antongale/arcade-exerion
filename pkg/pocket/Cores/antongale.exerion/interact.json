@@ -1,0 +1,171 @@
+{
+    "interact": {
+        "magic": "APF_VER_1",
+        "variables": [
+            {
+                "name": "Reset Core",
+                "id": 1,
+                "type": "action",
+                "enabled": true,
+                "address": "0xF0000000",
+                "value": 1
+            },
+            {
+                "name": "DIP",
+                "id": 1000,
+                "type": "number_u32",
+                "enabled": false,
+                "address": "0xF1000000"
+            },
+            {
+                "name": "Lives",
+                "port": "DSW0",
+                "id": 2,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 2,
+                "mask": "0xFFFFFFF8",
+                "options": [
+                    {
+                        "name": "1",
+                        "value": "0x0000"
+                    },
+                    {
+                        "name": "2",
+                        "value": "0x0001"
+                    },
+                    {
+                        "name": "3",
+                        "value": "0x0002"
+                    },
+                    {
+                        "name": "4",
+                        "value": "0x0003"
+                    },
+                    {
+                        "name": "5A",
+                        "value": "0x0004"
+                    },
+                    {
+                        "name": "5B",
+                        "value": "0x0005"
+                    },
+                    {
+                        "name": "5C",
+                        "value": "0x0006"
+                    },
+                    {
+                        "name": "254 (Cheat)",
+                        "value": "0x0007"
+                    }
+                ]
+            },
+            {
+                "name": "Bonus Life",
+                "port": "DSW0",
+                "id": 3,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFFFFE7",
+                "options": [
+                    {
+                        "name": "10000",
+                        "value": "0x0000"
+                    },
+                    {
+                        "name": "20000",
+                        "value": "0x0008"
+                    },
+                    {
+                        "name": "30000",
+                        "value": "0x0010"
+                    },
+                    {
+                        "name": "40000",
+                        "value": "0x0018"
+                    }
+                ]
+            },
+            {
+                "name": "Difficulty",
+                "port": "DSW0",
+                "id": 4,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFFFF9F",
+                "options": [
+                    {
+                        "name": "Easy",
+                        "value": "0x0000"
+                    },
+                    {
+                        "name": "Medium",
+                        "value": "0x0020"
+                    },
+                    {
+                        "name": "Hard",
+                        "value": "0x0040"
+                    },
+                    {
+                        "name": "Hardest",
+                        "value": "0x0060"
+                    }
+                ]
+            },
+            {
+                "name": "Coinage",
+                "port": "DSW1",
+                "id": 6,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 4,
+                "mask": "0xFFFFF1FF",
+                "options": [
+                    {
+                        "name": "5 Coins/1 Credit",
+                        "value": "0x0E00"
+                    },
+                    {
+                        "name": "4 Coins/1 Credit",
+                        "value": "0x0A00"
+                    },
+                    {
+                        "name": "3 Coins/1 Credit",
+                        "value": "0x0600"
+                    },
+                    {
+                        "name": "2 Coins/1 Credit",
+                        "value": "0x0200"
+                    },
+                    {
+                        "name": "1 Coin/1 Credit",
+                        "value": "0x0000"
+                    },
+                    {
+                        "name": "1 Coin/2 Credits",
+                        "value": "0x0400"
+                    },
+                    {
+                        "name": "1 Coin/3 Credits",
+                        "value": "0x0800"
+                    },
+                    {
+                        "name": "1 Coin/4 Credits",
+                        "value": "0x0C00"
+                    }
+                ]
+            }
+        ],
+        "messages": []
+    }
+}
