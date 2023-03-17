@@ -679,7 +679,7 @@ assign core_vid_90=spclk2_6MHZ;
 	 always @(posedge clk2_6MHZ) begin //was * clk2_6MHZ
 
 		nHDSP <= pixH<108  || pixH>428; //was 96
-		nVDSP <= pixV>240 || pixV<16;
+		nVDSP <= pixV>248 || pixV<8;
 
 		//vertical & horizontal display
       clr_addr <= 	(nHDSP|nVDSP) 			? 	 5'b00000     	:
