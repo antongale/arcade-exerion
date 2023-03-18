@@ -6,7 +6,9 @@ Thank you to Boogermann for providing the OpenGateware core template.
 
 Thank you to the following members of the community: Boogermann, misterretrowolf, Jotego, JimmyStones, atrac17 & BirdyBro.
 
-KiCAD PCB schematic & FPGA core for the MiSTer platform developed by Anton Gale.  The schematics are available in as part of the ARCADEPCB repo found at https://github.com/antongale/ARCADEPCB
+KiCAD PCB schematic & FPGA core for the MiSTer & Analogue Pocket platforms were developed by Anton Gale.  
+
+The schematics are available in as part of the ARCADEPCB repo found at https://github.com/antongale/ARCADEPCB
 
 <h2>Compatible Platforms</h2>
 <li>Analogue Pocket</li>
