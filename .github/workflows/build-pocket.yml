@@ -4,6 +4,9 @@
 # SPDX-FileCopyrightText: (c) 2022, OpenGateware authors and contributors
 ################################################################################
 name: Build/Release
+
+permissions:
+  contents: write
 ################################################################################
 # How to create a tag to launch the workflow
 # git tag -a "0.1.0" -m "Release v0.1.0"
