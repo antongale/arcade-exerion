@@ -652,11 +652,11 @@ assign core_vid_90=spclk2_6MHZ;
 	 //VID_A and VID_B or gates are no longer used
 
 	 
-	 always @(posedge clk2_6MHZ) begin
+//	 always @(posedge clk2_6MHZ) begin
 		//equivalent of VID_A.  If the 5th bit is used the upper part of the pallet ROM is
 		//utilized and the foreground layer is selected.
-		fg_clr_addr <= (ZA3|ZA2|ZA1|ZA0)		? 	{1'b1,ZA3,ZA2,ZA1,ZA0}	: 5'b00000;
-	 end
+//		fg_clr_addr <= (ZA3|ZA2|ZA1|ZA0)		? 	{1'b1,ZA3,ZA2,ZA1,ZA0}	: 5'b00000;
+//	 end
 	 
 	 always @(posedge spclk2_6MHZ) begin
 		//equivalent of VID_B.  If the 5th bit is used the upper part of the pallet ROM is
@@ -665,6 +665,7 @@ assign core_vid_90=spclk2_6MHZ;
 	 end
 	 
 	 always @(posedge bgclk_6) begin
+
 		//the background layer is drawn when a background pixel is present.  The
 		//background layer uses the bottom half of the pallet ROM (darker shades)
 		bg_clr_addr <= (ZC3|ZC2|ZC1|ZC0)		? 	{1'b0,ZC3,ZC2,ZC1,ZC0}	: 5'b00000;
@@ -673,12 +674,13 @@ assign core_vid_90=spclk2_6MHZ;
 	 //send synchronized pixel to the screen
 	 always @(posedge clk2_6MHZ) begin 
 
-		nHDSP <= pixH<108 | pixH>428; //horizontal blanking
-		nVDSP <= pixV>241 | pixV<15;  //vertical blanking
+		nHDSP <= pixH<107 | pixH>428; //horizontal blanking
+		nVDSP <= pixV>241 | pixV<14;  //vertical blanking
 
 		//set color of pixel with the following priority: Forground, Sprites, Background
       clr_addr <= 	(nHDSP|nVDSP) 			? 	 5'b00000     	:
-							(fg_clr_addr[4]) 		? 	fg_clr_addr 	:
+							(ZA3|ZA2|ZA1|ZA0)		? 	{1'b1,ZA3,ZA2,ZA1,ZA0} :
+							//(fg_clr_addr[4]) 		? 	fg_clr_addr 	:
 							(sp_clr_addr[4]) 		? 	sp_clr_addr 	:	bg_clr_addr;
 
 	 end 
