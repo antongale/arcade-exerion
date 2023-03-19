@@ -622,15 +622,15 @@ module core_top (
     //! ------------------------------------------------------------------------------------
     //! A/V Signals
     //! ------------------------------------------------------------------------------------
-    wire [15:0] exerion_snd_l; //! Audio L
-    wire [15:0] exerion_snd_r; //! Audio R
+    wire signed [15:0] exerion_snd; //! Audio 
+    //wire signed [15:0] exerion_snd; //! Audio R
     //! ------------------------------------------------------------------------------------
     wire        exerion_hs, exerion_vs;                  //! Sync H/V
     wire        exerion_hb, exerion_vb;                  //! Blank H/V
     wire        exerion_de = ~(exerion_hb | exerion_vb); //! Data Enable
     wire  [7:0] exerion_rgb;                             //! RGB 332
     wire [23:0] exerion_rgb24 = { exerion_rgb[7:5], 5'h0, exerion_rgb[4:2], 5'h0, exerion_rgb[1:0], 6'h0 };
-	 wire core_vid,core_vid_90;
+	 wire core_vid,core_vid_90,core_aud;
 	 
     //! ------------------------------------------------------------------------------------
     //! Core
@@ -640,7 +640,7 @@ module core_top (
     exerion_fpga excore
                  (
                      .clkm_20MHZ  ( clk_sys        ),
-                     .clkSP_20MHz ( clk_sys_280deg ),
+                     .clkSP_20MHz ( clk_sys_270deg ),
                      .clkaudio    ( clk_aud        ),
                      .RESET_n     ( ~RESET         ),
 							
@@ -653,7 +653,8 @@ module core_top (
                      .V_BLANK     ( exerion_vb       ),
 							.core_vid    ( core_vid         ),
 							.core_vid_90 ( core_vid_90      ),
-                     .pause       ( osnotify_inmenu_s ),
+                     .core_aud    ( core_aud			  ),
+							.pause       ( osnotify_inmenu_s ),
 
                      .CONTROLS    ( control_panel ),
 
@@ -664,8 +665,8 @@ module core_top (
                      .dn_data     ( ioctl_dout ),
                      .dn_wr       ( ioctl_wr   ),
 
-                     .audio_l     ( exerion_snd_l ),
-                     .audio_r     ( exerion_snd_r ),
+                     .audio_snd     ( exerion_snd ),
+                     ///.audio_r     ( exerion_snd_r ),
 
                      .hs_address  ( ),
                      .hs_data_out ( ),
@@ -721,14 +722,14 @@ module core_top (
     //! ------------------------------------------------------------------------------------
     sound_i2s #
         (
-            .CHANNEL_WIDTH( 15 ),
-            .SIGNED_INPUT (  0 )
+            .CHANNEL_WIDTH( 16 ),
+            .SIGNED_INPUT (  1 )
         )
         sound_i2s (
             .clk_74a    ( clk_74a ),
-            .clk_audio  ( clk_sys ),
-            .audio_l    ( exerion_snd_l[15:1] ),
-            .audio_r    ( exerion_snd_r[15:1] ),
+            .clk_audio  ( clk_aud ),
+            .audio_l    ( exerion_snd ),
+            .audio_r    ( exerion_snd ),
 
             .audio_mclk ( audio_mclk ),
             .audio_dac  ( audio_dac  ),
@@ -739,10 +740,10 @@ module core_top (
     //! Clocks
     //! ------------------------------------------------------------------------------------
     wire clk_sys;        //! Core:20.000Mhz
-    wire clk_sys_280deg; //! Core: -80º Phase Shift
+    wire clk_sys_270deg; //! Core: -90º Phase Shift
     wire clk_aud;        //! Audio: 3.333333Mhz
-    wire clk_vid;        //! Video: 6.666666Mhz
-    wire clk_vid_90deg;  //! Video: 90º Phase Shift
+    //wire clk_vid;        //! Video: 6.666666Mhz
+    //wire clk_vid_90deg;  //! Video: 90º Phase Shift
     wire pll_core_locked;
 
     mf_pllbase pll (
@@ -750,10 +751,10 @@ module core_top (
             .rst      ( 0 ),
 
             .outclk_0 ( clk_sys         ),
-            .outclk_1 ( clk_sys_280deg  ),
+            .outclk_1 ( clk_sys_270deg  ),
             .outclk_2 ( clk_aud         ),
-            .outclk_3 ( clk_vid         ),
-            .outclk_4 ( clk_vid_90deg   ),
+            //.outclk_3 ( clk_vid         ),
+            //.outclk_4 ( clk_vid_90deg   ),
             .locked   ( pll_core_locked )
         );
     //! @end

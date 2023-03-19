@@ -28,6 +28,7 @@ module exerion_fpga
         output            V_BLANK,
 		  output 			  core_vid,
 		  output 			  core_vid_90,
+		  output 			  core_aud,
         input       [8:0] CONTROLS,
 
         input       [7:0] DIP1,
@@ -37,8 +38,7 @@ module exerion_fpga
         input             dn_wr,
         input       [7:0] dn_data,
 
-        output reg [15:0] audio_l,  //from jt49_1 .sound
-        output reg [15:0] audio_r,  //from jt49_2 .sound
+        output signed [15:0] audio_snd,  //from jt49_1 & jt49_2
 
         input             pause,
 
@@ -285,7 +285,7 @@ assign core_vid_90=spclk2_6MHZ;
             .INT_n(PUR),
             .BUSRQ_n(PUR),
             .NMI_n(PUR&nCOIN), //+1 coin
-            .CLK(clk2_6MHZ/*clk3_3MHZ*/),
+            .CLK(!clk2_6MHZ/*clk3_3MHZ*/),
             .MREQ_n(Z80_MREQ),
             .DI(Z80A_databus_in),
             .DO(Z80A_databus_out),
@@ -295,13 +295,13 @@ assign core_vid_90=spclk2_6MHZ;
         );
 
     //Second Z80 CPU responsible for rendering the background graphic layers
-    T80pa Z80B(
+    T80as Z80B(
             .RESET_n(RESET_n),
             .WAIT_n(PUR),
             .INT_n(PUR),
             .BUSRQ_n(PUR),
             .NMI_n(PUR),
-            .CLK(bgclk_6), //bgclk_3
+            .CLK_n(!bgclk_3), //bgclk_3
             .MREQ_n(Z80B_MREQ),
             .DI(Z80B_databus_in),
             .DO(Z80B_databus_out),
@@ -383,16 +383,9 @@ assign core_vid_90=spclk2_6MHZ;
                             (!Z80B_RD & !BG_IO2)    ? Z80A_IO2:
                             (!Z80B_RD & !BG_VDSP)   ? ({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,nVDSP,SNHI}):
                             8'b00000000;
-
-    //    nHDSP <= H_BLANK;
-    //    nVDSP <= V_BLANK;
-    //    wait_n <= !pause; 
     end
 
     wire wait_n = !pause;
-
-
-		
     wire SLSE;
     wire CDCK, SLD11, SLD10, SLD9, SLD8, SLD7, SLD6, SLD5, SLD4, SLD3, SLD2, SLD1, SLD0;
     wire U8E_Q7,U8E_Q6,U8E_Q5;
@@ -650,62 +643,54 @@ assign core_vid_90=spclk2_6MHZ;
     wire clrB0,clrB1;
     reg [4:0] clr_addr; //U2E_Y1,U2E_Y2,U2D_Y1,U2D_Y2;
 	 
-	 reg VID_A_DLY;
-
-//    assign VID_A = ZA3|ZA2|ZA1|ZA0; //U8K_1|U8K_2;        //tile map layer active (bullets & text)
-//    assign VID_B = ZB3|ZB2|ZB1|ZB0;    //sprite layer active
-	 
 	 reg nVDSP,nHDSP;
-	 //always @(posedge clk2_6MHZ) begin //bgclk_6
-	 //end
-	 
-		assign H_BLANK = nHDSP;
-		assign V_BLANK = nVDSP;
+	 assign H_BLANK = nHDSP;
+	 assign V_BLANK = nVDSP;
 	 
 	 reg [4:0] sp_clr_addr,fg_clr_addr,bg_clr_addr;
+
+	 //VID_A and VID_B or gates are no longer used
+
 	 
-	 always @(posedge spclk2_6MHZ) begin //was *
+//	 always @(posedge clk2_6MHZ) begin
+		//equivalent of VID_A.  If the 5th bit is used the upper part of the pallet ROM is
+		//utilized and the foreground layer is selected.
+//		fg_clr_addr <= (ZA3|ZA2|ZA1|ZA0)		? 	{1'b1,ZA3,ZA2,ZA1,ZA0}	: 5'b00000;
+//	 end
+	 
+	 always @(posedge spclk2_6MHZ) begin
+		//equivalent of VID_B.  If the 5th bit is used the upper part of the pallet ROM is
+		//utilized and the sprite layer is selected.
 		sp_clr_addr <= (ZB3|ZB2|ZB1|ZB0) 	? 	{1'b1,ZB3,ZB2,ZB1,ZB0}	: 5'b00000;
 	 end
 	 
-	 always @(posedge clk2_6MHZ) begin //was *
-		fg_clr_addr <= (ZA3|ZA2|ZA1|ZA0)		? 	{1'b1,ZA3,ZA2,ZA1,ZA0}	: 5'b00000;
-	 end
+	 always @(posedge bgclk_6) begin
 
-	 always @(posedge bgclk_6) begin //was *
+		//the background layer is drawn when a background pixel is present.  The
+		//background layer uses the bottom half of the pallet ROM (darker shades)
 		bg_clr_addr <= (ZC3|ZC2|ZC1|ZC0)		? 	{1'b0,ZC3,ZC2,ZC1,ZC0}	: 5'b00000;
 	 end
 	 
-	 always @(posedge clk2_6MHZ) begin //was * clk2_6MHZ
+	 //send synchronized pixel to the screen
+	 always @(posedge clk2_6MHZ) begin 
 
-		nHDSP <= pixH<108  || pixH>428; //was 96
-		nVDSP <= pixV>248 || pixV<8;
+		nHDSP <= pixH<107 | pixH>428; //horizontal blanking
+		nVDSP <= pixV>241 | pixV<14;  //vertical blanking
 
-		//vertical & horizontal display
+		//set color of pixel with the following priority: Forground, Sprites, Background
       clr_addr <= 	(nHDSP|nVDSP) 			? 	 5'b00000     	:
-							(fg_clr_addr[4]) 		? 	fg_clr_addr 	:
+							(ZA3|ZA2|ZA1|ZA0)		? 	{1'b1,ZA3,ZA2,ZA1,ZA0} :
+							//(fg_clr_addr[4]) 		? 	fg_clr_addr 	:
 							(sp_clr_addr[4]) 		? 	sp_clr_addr 	:	bg_clr_addr;
 
 	 end 
 	
-    //select layer with priority
-//    mux4_4n U2ED(
-//               .EN_n(nHDSP|nVDSP), //nHDSP|nVDSP
-//                .A(VID_B),
-//                .B(VID_A),
-//                .D0({ZC3,ZC2,ZC1,ZC0}),
-//                .D1({ZB3,ZB2,ZB1,ZB0}),
-//                .D2({ZA3,ZA2,ZA1,ZA0}),
-//               .D3({ZA3,ZA2,ZA1,ZA0}),
-//                .Y(clr_addr)
-//            );
-
     //colour prom
     prom6331_E1 UE1(
                     .addr(clr_addr),
                     .clk(clkm_20MHZ),
                     .n_cs(1'b0),
-                    .q({clrB1,clrB0,clrG2,clrG1,clrG0,clrR2,clrR1,clrR0})
+						  .q({BLUE,GREEN,RED})
                 );
 
     reg rVGA_HS;
@@ -975,7 +960,7 @@ assign core_vid_90=spclk2_6MHZ;
     //always @(posedge spclk2_6MHZ) {ZB3,ZB2,ZB1,ZB0} <= (sppixV[0]) ? {spram_out_11} : {spram_out_10}; //U9A
     //always @(posedge spclk4_6BMHZ) {ZB3,ZB2,ZB1,ZB0} <= (sppixV[0]) ? {spram_out_11} : {spram_out_10}; //U9A - original
 	 //always @(posedge clk4_6BMHZ) {ZB3,ZB2,ZB1,ZB0} <= (sppixV[0]) ? {spram_out_11} : {spram_out_10}; //U9A
-	 always @(posedge clk2_6MHZ) {ZB3,ZB2,ZB1,ZB0} <= (sppixV[0]) ? {spram_out_11} : {spram_out_10}; //U9A
+	 always @(posedge spclk2_6MHZ) {ZB3,ZB2,ZB1,ZB0} <= (sppixV[0]) ? {spram_out_11} : {spram_out_10}; //U9A
 	 
     always @(negedge spclk1_10MHZ) begin
         U10nRCO<=!(spramaddr_cnt[0]&spramaddr_cnt[1]&spramaddr_cnt[2]&spramaddr_cnt[3]);
@@ -1058,24 +1043,13 @@ assign core_vid_90=spclk2_6MHZ;
                 .n_q(U1D_B_nq)
             );
 
-    wire         [9:0] pre_sndl;
-    wire         [9:0] pre_sndr;
-    wire         [7:0] ay12F_araw, ay12F_braw, ay12F_craw;
-    wire         [7:0] ay12V_araw, ay12V_braw, ay12V_craw;
-    wire signed [15:0] ay12F_adcrm, ay12F_bdcrm, ay12F_cdcrm;
-    wire signed [15:0] ay12V_adcrm, ay12V_bdcrm, ay12V_cdcrm;
-    wire               AY12F_sample,AY12V_sample;
-    wire         [9:0] sound_outF;
-    wire         [9:0] sound_outV;
+    wire	AY12F_sample,AY12V_sample;
+    wire	[9:0] sound_outF;
+    wire	[9:0] sound_outV;
 
-    always @(posedge clk3_3MHZ) begin
-        audio_l <= ({1'd0, sound_outF, 5'd0});
-        audio_r <= ({1'd0, sound_outV, 5'd0});
-    end
-
-    jt49_bus AY_12F(
+    jt49_bus #(.COMP(2'b10)) AY_12F(
                 .rst_n(RESET_n),
-                .clk(clk3_3MHZ),            // signal on positive edge //U1D_B_q
+                .clk(clkaudio),            // signal on positive edge //U1D_B_q
                 .clk_en(1),                /* synthesis direct_enable = 1 */
 
                 .bdir(IOA1),               // bus control pins of original chip
@@ -1085,16 +1059,16 @@ assign core_vid_90=spclk2_6MHZ;
                 .dout(AY_12F_databus_out),
 
                 .sound(sound_outF),        // combined channel output
-                .A(ay12F_araw),            // linearised channel output
-                .B(ay12F_braw),
-                .C(ay12F_craw),
+                .A(),            // linearised channel output
+                .B(),
+                .C(),
                 .sample(AY12F_sample)
 
             );
 
-    jt49_bus AY_12V(
+    jt49_bus #(.COMP(2'b10)) AY_12V(
                 .rst_n(RESET_n),
-                .clk(clk3_3MHZ),            // signal on positive edge
+                .clk(clkaudio),            // signal on positive edge
                 .clk_en(1),                /* synthesis direct_enable = 1 */
 
                 .bdir(IOA3),               // bus control pins of original chip
@@ -1104,9 +1078,9 @@ assign core_vid_90=spclk2_6MHZ;
                 .dout(AY_12V_databus_out),
 
                 .sound(sound_outV),        // combined channel output
-                .A(ay12V_araw),            // linearised channel output
-                .B(ay12V_braw),
-                .C(ay12V_craw),
+                .A(),            // linearised channel output
+                .B(),
+                .C(),
                 .sample(AY12V_sample),
 
                 .IOA_in(AY_12V_ioa_in),    //IO to ICX security chip
@@ -1116,6 +1090,20 @@ assign core_vid_90=spclk2_6MHZ;
                 .IOB_out(AY_12V_iob_out)
             );
 
+//remove DC offset and combine both AY sound chips
+//I can't get the filter to work so jtframe_fir is disabled
+
+jtframe_jt49_filters u_filters(
+            .rst    ( !RESET_n   ),
+            .clk    ( clkaudio ),
+            .din0   ( sound_outF    ),
+            .din1   ( sound_outV    ),
+            .sample ( AY12F_sample  ),
+            .dout   ( audio_snd )
+        );
+				
+assign core_aud = clk3_3MHZ;
+				
     reg [7:0] tmrmask ;//= 8'b00000000;
     reg [2:0] tmrcounter;
     reg [2:0] tmrcnt2;
@@ -1429,9 +1417,6 @@ assign core_vid_90=spclk2_6MHZ;
                 );
 
     //  ****** FINAL 7-BIT ANALOGUE OUTPUT *******
-    assign BLUE    = {clrB1,clrB0      }; //rBLUE;
-    assign RED     = {clrR2,clrR1,clrR0}; //rRED;
-    assign GREEN   = {clrG2,clrG1,clrG0}; //rGREEN;
     assign H_SYNC  = rVGA_HS;
     assign V_SYNC  = rVGA_VS;
 
